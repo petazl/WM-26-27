@@ -77,6 +77,10 @@ latestFileId = fileTable{end,1};
 function appendToFileIDTable(filename, FileTableID)
     rowToBeAppended = table({filename}, 'VariableNames', {'FileName'});
     rowToBeAppended = addvars(rowToBeAppended, FileTableID,'Before',1,'NewVariableNames','FileID');
+
+% Add some sort of input for a description of the file here. If needed, or
+% add a description for the sheet
+
     writetable(rowToBeAppended, 'MasterDataSheetTest.xlsx', 'Sheet', 1, 'WriteMode', 'append');
 end
 

@@ -62,7 +62,7 @@ function loadTdmsFileData(filename,fileTableID)
 end
     
 fileTable = readtable('MasterDataSheetTest.xlsx','Sheet',1);
-% channelTable = readtable('MasterDataSheetTest.xlsx','Sheet',2);
+channelTable = readtable('MasterDataSheetTest.xlsx','Sheet',2);
 % dataTable = readtable('MasterDataSheetTest.xlsx','Sheet',3);
 
 latestFileId = fileTable{end,1};
@@ -99,4 +99,20 @@ for i = 1:height(files)
         fprintf('File Data %s succesfully loaded\n', files(i).name); 
     end
 end
-    
+
+listOfChannelsToLog = [];
+
+function listOfChannelsToLog = addChannelToListToLog(inputtedList,channelTable)
+    for i = 1:height(channelTable);
+        if channelTable{i,"LogThisChannel_"} == 1
+            inputtedList(end + 1) = i;
+        end
+    end
+
+    inputtedList
+
+    listOfChannelsToLog = inputtedList;
+end
+
+listOfChannelsToLog = addChannelToListToLog(listOfChannelsToLog,channelTable);
+

@@ -4,6 +4,20 @@ if isempty(scriptFolder)
     scriptFolder = pwd; 
 end
 
+% --- CHANNEL CONFIGURATION ---
+channelConfigFile = fullfile(scriptFolder, 'ChannelSheetMDD.xlsx');
+
+% Read channel configuration
+channelConfig = readtable(channelConfigFile, 'Sheet',1);
+
+% Extract logging decisions
+logChannels = logical(channelConfig.LogThisChannel);
+
+% Channel indices correspond to Excel row numbers
+% Excel row 2 = TDMS column 2
+channelIndices = find(logChannels);
+
+
 folderNames = {
     'Efficiency'
     'Open-circuit'
@@ -113,7 +127,7 @@ for i = 1:length(folderNames)
             latestFileId = latestFileId + 1;
             
             fprintf('Loading %s into memory buffer... \n', currentFileName);
-            newTableData = prepareTdmsData(filePath, latestFileId);
+            newTableData = prepareTdmsData(filePath, latestFileId,channelIndices);
             numRows = height(newTableData);
             
             % --- EXAMINE CHANNELS FOR DESCRIPTION SHEET ---
@@ -198,16 +212,33 @@ disp('All TDMS files consolidated and processed successfully!');
 
 %% --- LOCAL FUNCTIONS ---
 
-function preparedData = prepareTdmsData(filepath, fileTableID)
+function preparedData = prepareTdmsData(filepath, fileTableID, channelIndices)
+
     loadFile = tdmsread(filepath);
     data = loadFile{1};
-    
+
     if istimetable(data)
         data = timetable2table(data, 'ConvertRowTimes', false);
     elseif ~istable(data)
         data = array2table(data);
     end
-    
-    data = addvars(data, (1:height(data))', 'Before', 1, 'NewVariableNames', 'SampleID');
-    preparedData = addvars(data, repmat(fileTableID, height(data), 1), 'Before', 1, 'NewVariableNames', 'FileID');
+
+    % --- FILTER CHANNELS ---
+    numChannels = width(data);
+
+    % Check that configured channels exist in the TDMS data
+    validIndices = channelIndices(channelIndices <= numChannels);
+
+    % Add SampleID and FileID
+    data = addvars(data, (1:height(data))', ...
+        'Before', 1, 'NewVariableNames', 'SampleID');
+
+    data = addvars(data, ...
+        repmat(fileTableID, height(data), 1), ...
+        'Before', 1, 'NewVariableNames', 'FileID');
+
+    % Retain only selected channels
+    data = data(:, validIndices);
+
+    preparedData = data;
 end
